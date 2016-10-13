@@ -1,37 +1,38 @@
 package com.example.atul.latlong;
 
-import android.Manifest;
+
+import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
-import android.location.Address;
-import android.location.Geocoder;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity implements LocationListener {
+public class MainActivity extends Activity implements LocationListener {
 
-    TextView textView, textView1;
+
+    TextView mlatitude, mlongitude;
     LocationManager locationManager;
-    double lat, lng;
-
+    String provider;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        textView = (TextView) findViewById(R.id.textView);
-        textView1 = (TextView) findViewById(R.id.textView1);
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        mlatitude = (TextView) findViewById(R.id.tv2);
+        mlongitude = (TextView) findViewById(R.id.TextView04);
+
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        Criteria criteria = new Criteria();
+        provider = locationManager.getBestProvider(criteria, false);
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -41,28 +42,41 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        locationManager.requestLocationUpdates(locationManager.NETWORK_PROVIDER, 5000, 20, this);
+        Location location = locationManager.getLastKnownLocation(provider);
+
+        if (location != null) {
+            System.out.println("Provider " + provider + " has been selected.");
+            onLocationChanged(location);
+        } else {
+            mlatitude.setText("Location not available");
+            mlongitude.setText("Location not available");
+        }
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        locationManager.removeUpdates(this);
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        lat = location.getLatitude();
-        lng = location.getLongitude();
-        textView.setText(""+lat+"\n"+lng);
+        int lat = (int) location.getLatitude();
+        int longi = (int) location.getLongitude();
+        mlatitude.setText(String.valueOf(lat));
+        mlongitude.setText(String.valueOf(longi));
 
-        Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.ENGLISH);
-
-        try {
-            List<Address> myadd = geocoder.getFromLocation(lat,lng,5);
-            Address myFinalAdd = myadd.get(0);
-            StringBuilder sb = new StringBuilder();
-            for (int i=0; i<myFinalAdd.getMaxAddressLineIndex(); i++){
-                sb.append(myFinalAdd.getAddressLine(i));
-            }
-            textView1.setText(""+sb);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
     }
 
@@ -73,11 +87,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
     @Override
     public void onProviderEnabled(String s) {
-        Toast.makeText(this, "On", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "New Provider Enabled", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onProviderDisabled(String s) {
-        Toast.makeText(this, "Off", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "New Provider Disabled", Toast.LENGTH_SHORT).show();
     }
 }
